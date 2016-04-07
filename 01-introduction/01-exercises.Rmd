@@ -22,12 +22,11 @@ Write a function (f) that takes a vector of numbers, **x**, and returns a vector
 ### Solution 
 
 ```{r}
+x <- c(1,5,2,8)
 f <- function(x) {
-  
-  # ...
-  
+   prod(x)/ifelse(x==0,1,x) 
 }
-
+f(x)
 ```
     
 
@@ -49,8 +48,12 @@ Write a function f(x) to accept an integer vector, and returns a vector with tho
 ### Solution
 
 ```{r}
+x <- c(1:20)
 f <- function(x) {
-  # ...
-  
+  a = ifelse(seq(x)/3==round(seq(x)/3, 0), "Fizz", x)
+  b = ifelse(seq(a)/5==round(seq(a)/5, 0), "Buzz", a)
+  c = ifelse(seq(b)/15==round(seq(b)/15, 0), "FizzBuzz", b)
+  c 
 }
+f(x)
 ```
