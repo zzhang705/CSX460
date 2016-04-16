@@ -36,7 +36,7 @@ Hint: See `?cars2010`
 - After the **Fuel Economy** data is loaded, combine three data sets into one data set. (Note: The name `dat` is very often used in these situations, `data` is a reserved R word.)  
 
 ```{r}
-dat <- bind_rows( cars2010, cars2011, cars2012)    # Define 
+dat <- bind_rows(cars2010, cars2011, cars2012)    # Define 
 ```
 
 
@@ -50,7 +50,7 @@ naive_guess <- mean(dat$FE)
 - plot FE (Fuel Econonomy) vs. EngDisp. Plot the naive guess.
 
 ```{r}
-# ... ggplot2  
+dat %>% ggplot( aes(x=EngDispl, y=FE)) + geom_point() + geom_hline(yintercept=naive_guess, color='red')
 ```
 
 - Sample 10 observations from `dat`
@@ -65,7 +65,7 @@ set.seed(314)
 samp <- dat %>% dplyr::sample_n(10) 
 
 # Plots 
-...
+samp %>% ggplot( aes(x=EngDispl, y=FE)) + geom_point() + geom_hline(yintercept=naive_guess, color='red') + stat_smooth( method="lm", se = FALSE)
 
 
 ```
@@ -85,15 +85,15 @@ All functions should accept two arguments:
 ```{r}
 
 rmse <- function(y,yhat) {
-  ( y - yhat )^2  %>% mean   %>% sqrt 
+  (y - yhat)^2 %>%  mean %>% sqrt
 }
 
 mae <- function(y, yhat) {
-  # ...
+  (y - yhat) %>% abs %>% mean
 }
 
 medae <- function(y, yhat) { 
-  # ...
+  (y - yhat) %>% abs %>% median
 }
 
 ```
@@ -109,7 +109,23 @@ Use these functions to evaluate the loss/performance of:
 
 
 ```{r}
-fit.2010 <- ... 
+#fit.2010 <- ... 
+fit.2010 <- lm( FE ~ EngDispl, data=cars2010)
+fit.2010
+resid(fit.2010) %>% qplot()
+#fit.dat <- lm( FE ~ EngDispl + NumCyl + NumGears, data=dat)
+#resid(fit.dat) %>% qplot()
+#fit.dat %>% summary()
+#rmse(dat$FE, fit.dat$fitted.values)
+#fit.dat <- lm( FE ~ ., data=dat)
+#fit.dat
+#fit.dat <- lm( FE ~ CarlineClassDesc + EngDispl, data=dat)
+#fit.dat
+#dat %>% select( CarlineClassDesc) %>% table
+#??stepAIC
+#yhat <- predict(fit.2010.dat, newdata=cars2012)
+#qplot(y=cars2012$FE, x=yhat) + geom_abline(intercept=0,slope=1)
+
 ```
 
 - Use your functions to evaluate the training error
@@ -119,13 +135,19 @@ fit.2010 <- ...
 
 ```{r}
 
-y.2010 <- ... 
-y.2011 <- ... 
-y.2012 <- ...
+#y.2010 <- ... 
+yhat2010 <- predict(fit.2010, newdata=cars2010)
+qplot(y=cars2010$FE, x=yhat2010) + geom_abline(intercept=0,slope=1)
+#y.2011 <- ... 
+yhat2011 <- predict(fit.2010, newdata=cars2011)
+qplot(y=cars2011$FE, x=yhat2011) + geom_abline(intercept=0,slope=1)
+#y.2012 <- ...
+yhat2012 <- predict(fit.2010, newdata=cars2012)
+qplot(y=cars2012$FE, x=yhat2012) + geom_abline(intercept=0,slope=1)
 
-rmse.2010 <- ...
-rmse.2011 <- ...
-rmse.2012 <- ... 
+rmse.2010 <- rmse(cars2010$FE, yhat2010)
+rmse.2011 <- rmse(cars2011$FE, yhat2011)
+rmse.2012 <- rmse(cars2012$FE, yhat2012) 
 
 ```
 
@@ -145,6 +167,8 @@ rmse.2012
 
 
 ```{r}
-fit.2010 <- ...
-betas <- ...
+#fit.2010 <- ...
+#betas <- ...
+fit.2011 <- lm( FE ~ EngDispl + NumCyl + VarValveLift, data=cars2011)
+betas <- fit.2011 %>% lm.beta()
 ```
