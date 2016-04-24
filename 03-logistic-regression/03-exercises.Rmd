@@ -1,7 +1,7 @@
 ---
 title: "03-exercises"
-author: "Your Name Here"
-date: "April 20, 2016"
+author: "Zhihui Zhang"
+date: "April 23, 2016"
 output: html_document
 ---
 
@@ -18,7 +18,7 @@ output: html_document
 I am still struggling with names ...
 
 - Please send me your picture
-
+- Head shot sent on 04/20/2016
 
 ## Assignment 
 
@@ -43,7 +43,6 @@ fe <- dplyr::bind_rows(cars2010, cars2011, cars2012)    # Define Da
 data("GermanCredit")  # see GermanCredit
 
 ... = NULL  # Needed for aesthetics 
-
 ```
 
 
@@ -62,17 +61,18 @@ form <- ~ EngDispl + NumCyl + Transmission + AirAspirationMethod + NumGears + Tr
 
  # Your work here
  fit.min <- lm( FE ~ 1, fe )
-
- 
- stepAIC( fit.min.forward, scope = ~ 1, direction = "backward")
+ fit.min.forward <-stepAIC( fit.min, score = ~ 1, direction = "forward")
  
  
  fit.full <- lm( FE ~ ., fe )
- stepAIC( fit.full, score = ~ 1, direction = "backward")
+ fit.full.backward <-stepAIC( fit.full, score = ~ 1, direction = "backward")
+ 
+ fit.min.forward %>% summary()
+ fit.full.backward %>% summary()
 ```
 
 - Are they the same model? If not why?  Which is better? JUstify your answer.
-
+- They are the same model, the linear model. The full model takes into accont of every feature values, which overfits the data, that results in less predicatability. The simplist approach fits better in predicting a base-line clean and fast.
 
 
 ## Logsitic and Inverse Logistic Transformation 
@@ -92,16 +92,17 @@ form <- ~ EngDispl + NumCyl + Transmission + AirAspirationMethod + NumGears + Tr
 ```{r}
 
 logistic <- function(x) { 
-  ... # Your work here  
+  return (1/(1+exp(-x)))
 }
 
-qplot( ... )
+curve(logistic, -10, 10)
 
 logistic_inv <- function(y) { 
-  ... # Your work  
+  return (-log((1/y)-1))
 }
 
-qplot(...) 
+curve(logistic_inv, 0, 1)
+
 
 ```
 
@@ -121,17 +122,23 @@ c(0,0.5,1) %>% logistic_inv
 Using the GermanCredit data from the **Caret** package/ UCI Machine Learning Library, create a model for `Class` ("Good" vs. "Bad" ). Show your model performance.  
 
 ```{r}
-
-fit.min.forward
+fit.min <- glm(formula = Class ~ 1, family = binomial, data = GermanCredit)
+fit.min.forward <-stepAIC( fit.min, score = ~ 1, direction = "forward")
+fit.min.forward %>% summary()
 ```
-
-
 
 ## Iterative Correlated Feature Removal 
 
 - Implement Kuhn's iterative feature removal function described in **APM** Section 3.5, page 47
+```{r}
+control <- rfeControl(functions=rfFuncs, method="cv", number=10)
+results <- rfe(GermanCredit[,-10], GermanCredit[,10], rfeControl=control)
+print(results)
 
-
+fit.full <- glm( formula = Class ~ CheckingAccountStatus.none +  CheckingAccountStatus.lt.0 + Duration + CreditHistory.Critical + Amount, family = binomial, data = GermanCredit )
+fit.full.backward <-stepAIC( fit.full, score = ~ 1, direction = "backward")
+fit.full.backward %>% summary()
+```
 
 ## Synthetic Data (Optional)
 
