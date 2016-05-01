@@ -1,7 +1,7 @@
 ---
 title: "Sensitivity and Specificity"
-author: "Your Name Here"
-date: "October 5, 2015"
+author: "Zhihui Zhang"
+date: "May 1, 2016"
 output: html_document
 ---
 
@@ -49,12 +49,12 @@ k=10
 # CROSS-VALIDATION
 # ... YOUR WORK HWEW
 
-sd_cv <- .. # YOUR ANSWER HERE
-
+sd_cv <- sapply(split(x[order(rnorm(length(x)))], 1:k), mean) %>% sd
+sd_cv
 
 # BOOTSTRAP (EXAMPLE)
 sd_boot <- sapply(1:k, function(i) sample(x,replace=TRUE) %>% mean ) %>% sd
-
+sd_boot
 ```
 
 
@@ -105,16 +105,24 @@ The functions should take two logical vectors of the same length, `y` and `yhat`
 
 ```{r}
 
-prevalence = function(y,yhat) {}
-accuracy   =  .. 
-error_rate = ..
-tpr = ..
-fpr = ..      # See Example
-tnr = ..
-sensitivity = ..
-specificity = ..
-recall = .. 
-precision = ..
+#prevalence=actual yes/total
+prevalence = function(y,yhat) { sum(y)/length(y) }
+#accuracy = (Ture positive + True negative)/Total Population
+accuracy =  function(y, yhat) { (sum(yhat & y) + sum(!yhat & !y))/length(y)}
+#error_rate (misclassification reate)
+error_rate = function(y, yhat) { (sum(yhat & !y) + sum(!yhat & y))/length(y)}
+
+#tpr (true postive rate) = True Postives / Observed Positives
+tpr = sensitivity = recall = function(y, yhat) { sum(y & yhat) / sum(y) }
+
+#fpr (False Positive Rate) = False Positves / Observed Negatives
+fpr = function(y,yhat) { sum(yhat & !y ) / sum(! y) }
+
+#tnr (true negative rate) = True Negatives / Observed Negatives
+tnr = specificity = function(y, yhat) { sum( !yhat & !y)/ sum(!y)}
+ 
+#precision = Ture positives /Predicted Positives
+precision = function(y, yhat) { sum( yhat & y) / sum (yhat)}
 
 # EXAMPLE: fpr
 # The FPR is THE NUMBER OF FALSE POSITIVES / NEGATIVES (TN+FP)
@@ -124,17 +132,20 @@ y = test$Versicolor == 'versicolor'
 yhat = predict(fit.glm, test, type="response") > threshold
 
 
-fpr = function(y,yhat)
-  sum(y & (y != yhat) ) / # FP
-  sum(! y)                # N
-
+#fpr = function(y,yhat)
+#  sum(yhat & !y ) / # FP
+#  sum(! y)                # N
+prevalence(y, yhat)
+accuracy(y,yhat)
+error_rate(y, yhat)
+tpr(y,yhat)
+sensitivity(y,yhat)
+recall(y,yhat)
+tnr(y,yhat)
+specificity(y,yhat)
 fpr(y,yhat)
-
+precision(y, yhat)
 ```
 
 - What is wrong with the modeling approach used?
-
-
-
-
-
+Missing resampling and tuning.
