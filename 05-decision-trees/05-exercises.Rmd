@@ -1,7 +1,7 @@
 ---
 title: "05-exercises"
-author: "Your Name Here"
-date: "2016-05-xx"
+author: "Zhihui Zhang"
+date: "2016-05-08"
 output: html_document
 ---
 
@@ -10,7 +10,7 @@ output: html_document
 - **APM** Chapter 14.1-14.5 "Classification Trees and Rule-Based"  
 
 ```{r, echo=FALSE, results='hide', warning=FALSE }
-packs <-  c('ggplot2', 'magrittr', 'dplyr', 'caret', 'AppliedPredictiveModeling')
+packs <-  c('ggplot2', 'magrittr', 'dplyr', 'caret', 'AppliedPredictiveModeling', 'MASS', 'maptree')
 
 for( nm in packs ) { 
   # message(nm)
@@ -38,16 +38,29 @@ Save the caret objects with the names provided.
 
 ```{r}
 
-# Your work here. 
+data("GermanCredit")
+gc <- GermanCredit
+set.seed(10)
+ctrl <- trainControl(method='boot', number=5, classProb=TRUE, savePrediction=TRUE)
 
-fit.glm <- ..
-fit.knn <- ..
-fit.rpart <- ..
-fit.rf <- ..
-fit.myown <- ..
+fit.glm <- train(Class ~ ., data=gc, method="glm", family="binomial", trControl=ctrl)
+fit.glm$finalModel  %>% summary()
+
+fit.knn <- train(Class ~ ., data=gc, method="knn", trControl=ctrl, tuneGrid=data.frame(k=c(40,50,60)))
+fit.knn$finalModel %>% summary()
+
+fit.rpart <- train(Class ~ ., data=gc, trControl=ctrl, method="rpart", tuneLength=20)
+fit.rpart$finalModel %>% summary()
+fit.rpart$finalModel %>% draw.tree(nodeinfo = T)
+
+fit.rf <- train(Class ~ ., data=gc, trControl=ctrl, method="rf")
+fit.rf$finalModel %>% summary()
+
+fit.svmRadial <- train(Class ~ ., data=gc, trControl=ctrl, method="svmRadial")
+fit.svmRadial$finalModel %>% summary()
 
 
-````
+```
 
 
 - Compare the models using `caret::confusionMatrix`
@@ -58,7 +71,32 @@ Show your work!
 
 ```{r}
 
-.. # YOUR WORK HERE
+cm.glm <- fit.glm %>% confusionMatrix( positive="Bad")
+cm.knn <- fit.knn %>% confusionMatrix( positive="Bad")
+cm.rpart <- fit.rpart %>% confusionMatrix( positive="Bad")
+cm.rf <- fit.rf %>% confusionMatrix( positive="Bad")
+cm.svmRadial <- fit.svmRadial %>% confusionMatrix( positive="Bad")
+
+table(fit.glm$pred$pred, fit.glm$pred$obs) %>% confusionMatrix()
+table(fit.knn$pred$pred, fit.knn$pred$obs) %>% confusionMatrix()
+table(fit.rpart$pred$pred, fit.rpart$pred$obs) %>% confusionMatrix()
+table(fit.rf$pred$pred, fit.rf$pred$obs) %>% confusionMatrix()
+table(fit.svmRadial$pred$pred, fit.svmRadial$pred$obs) %>% confusionMatrix()
+
+roc.glm <- roc(fit.glm$pred$obs, fit.glm$pred$Bad, auc=TRUE )
+roc.glm %>% plot( print.auc=TRUE, grid=TRUE)
+
+roc.knn <- roc(fit.knn$pred$obs, fit.knn$pred$Bad, auc=TRUE )
+roc.knn %>% plot( print.auc=TRUE, grid=TRUE)
+
+roc.rpart <- roc(fit.rpart$pred$obs, fit.rpart$pred$Bad, auc=TRUE )
+roc.rpart %>% plot( print.auc=TRUE, grid=TRUE)
+
+roc.rf <- roc(fit.rf$pred$obs, fit.rf$pred$Bad, auc=TRUE )
+roc.rf %>% plot( print.auc=TRUE, grid=TRUE)
+
+roc.svmRadial <- roc(fit.svmRadial$pred$obs, fit.svmRadial$pred$Bad, auc=TRUE )
+roc.svmRadial %>% plot( print.auc=TRUE, grid=TRUE)
 
 ```
 
@@ -67,10 +105,32 @@ Q: Which models would you select based on these tools?
 
 Q: If you assume that a `Class=="bad""` is 10 more costly than `Class=="good"`, determine your threshold for the model of your choice.  Show your work.
 
+Among the models that showed higher accuracy than the naiive guess, Radom Forest Model shows the highest accuracy and lowest cost, thus it's probably the best model.
 
 ```{r}
+#PCF = (P × C(+|−)) / (P × C(−|+) + (1 − P) × C(+|−))
+#normalized expected cost (NEC) function to characterize the model
+#NEC = PCF × (1 − TP) + (1 − PCF) × FP
+pcf <- function(p, cfalse, ctrue) { p* ctrue / (p*cfalse + (1-p)*ctrue)}
+ncf <- function(pcf, tp, fp) { pcf * (1-tp) + (1-pcf) * fp}
 
-.. # YOUR WORK HERE
+pcf.gc <- pcf(0.3, 10, 1)
+pcf.gc
 
+ncf.glm <- ncf(pcf.gc, cm.glm$table[2,1], cm.glm$table[1,2])
+ncf.glm
+
+ncf.knn <- ncf(pcf.gc, cm.knn$table[2,1], cm.knn$table[1,2])
+ncf.knn
+
+ncf.rpart <- ncf(pcf.gc, cm.rpart$table[2,1], cm.rpart$table[1,2])
+ncf.rpart
+
+ncf.rf <- ncf(pcf.gc, cm.rf$table[2,1], cm.rf$table[1,2])
+ncf.rf
+
+ncf.svmRadial <- ncf(pcf.gc, cm.svmRadial$table[2,1], cm.svmRadial$table[1,2])
+ncf.svmRadial
 
 ```
+
