@@ -1,7 +1,7 @@
 ---
-title: "05-exercises"
-author: "Your Name Here"
-date: "2016-05-xx"
+title: "06-exercises"
+author: "Zhihui Zhang"
+date: "2016-05-15"
 output: html_document
 ---
 
@@ -14,7 +14,7 @@ output: html_document
 
 ```{r,echo=FALSE}
 
-packs <-  c('AppliedPredictiveModeling', 'ggplot2', 'magrittr', 'dplyr')
+packs <-  c('caret', 'AppliedPredictiveModeling', 'ggplot2', 'magrittr', 'dplyr')
 
 for( nm in packs ) { 
   # message(nm)
@@ -38,35 +38,35 @@ This week we return to the Fuel Economy Data having learned much about model bui
 
 Start by making choosing a metric and making a naive guess of model performance: 
 
-Metric: _______________
-Naive Guess: _______________
-Expected Model Performance (based on Naive Guess): _______________
+Metric: Regression metrics
+Naive Guess: Average of the fuel economy
+Expected Model Performance (based on Naive Guess): RMSE
 
 Show your work below for the calculations
 
 ```{r} 
 
   
-naive_guess = ..
+naive_guess <- mean(dat$FE)
 
-err_naive_guess = ..
+err_naive_guess <- (dat$FE - naive_guess)^2 %>%  mean %>% sqrt
 
 ```
 
 
-Based only your intuition, how low do your think you can get your metric: ___________
+Based only your intuition, how low do your think you can get your metric: Linear Model
 
 
 ## Examine your data
 
  * Plot your response/outcome 
 
- * Make a guess of a strong predictor: _________________  
+ * Make a guess of a strong predictor: EngDispl  
  * Plot your response vs your predictor. 
 
 ```{r}
 
-.. # Your work here
+qplot(y=dat$FE, x=dat$EngDispl)
 
 ```
 
@@ -78,14 +78,21 @@ Using **caret**, build a simple linear model and a simple tree model.
 
 ```{r}
 
-fit.lm <- .. # Your model here
-fit.rp <- .. # Your model here
+fit.lm <- train(dat$FE ~ ., data = FE, method = "lm")
+summary(fit.lm)
+fit.lm$finalModel  %>% summary()
+
+fitControl <- trainControl(method = 'cv', number=6)
+Grid <- expand.grid(cp=seq(0, 0.05, 0.005))
+fit.rp <- train(y=dat$FE, x=dat[, -which(colnames(dat) == "FE")], method = 'rpart', trControl=fitControl, metric='RMSE',maximize=FALSE, tuneGrid = Grid)
+summary(fit.rp)
+fit.rp$finalModel  %>% summary()
 
 ```
 
 
 What did you learn about the data from these models.
-
+Linear Model looks adequate.
 
 
 ## Build More Advanced Models
@@ -97,15 +104,17 @@ Now refine your models. Use **caret** to build advanced models:
 ```{r}
 
 # Your work here.
-fit.bag   <- .. # bagging model 
+fit.bag   <- bag(dat[, -which(colnames(dat) == "FE")], dat$FE, B = 10, bagControl = bagControl(fit = ctreeBag$fit, predict = ctreeBag$pred, aggregate = ctreeBag$aggregate))
+fit.bag %>% summary()
 
-fit.boost <- .. # boosting model
-
-
+fit.boost <-  train(dat$FE ~ ., data = FE, method = "gbm")
+summary(fit.boost)
+fit.boost$finalModel  %>% summary()
 ```
 
 
 ## Conclusion 
 
 Which model would you use and why?  Under different circumstances why would you choose one of the other models.
+In this case, Linear model seems simple and effective enough.
 
